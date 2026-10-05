@@ -533,6 +533,32 @@ if (!JSDOM) {
   checkTrue('в окне есть форма входа/токена', /sync-autosync|Токен доступа/.test(dom.window.document.getElementById('modal-host').innerHTML));
   checkTrue('приложение работало без ошибок в консоли', consoleErrors.length === 0, consoleErrors.slice(0, 3).join(' | '));
   dom.window.close();
+
+  /* Демо-режим сервера: приложение подключается само, без ввода токена */
+  const consoleErrors2 = [];
+  const dom2 = new JSDOM(html, {
+    url: BASE + '/',
+    runScripts: 'dangerously',
+    resources: 'usable',
+    pretendToBeVisual: true,
+    beforeParse(window) {
+      window.fetch = (input, init) => fetch(new URL(typeof input === 'string' ? input : input.url, BASE), init);
+      window.scrollTo = () => {};
+      window.confirm = () => true;
+      window.HTMLCanvasElement.prototype.getContext = function () { return null; };
+      window.console.error = (...args) => consoleErrors2.push(args.map(String).join(' '));
+    }
+  });
+  const autoConnected = await waitFor(() => dom2.window.ZHKX && dom2.window.ZHKX.Sync && dom2.window.ZHKX.Sync.info().status === 'synced', 15000);
+  checkTrue('демо-режим: приложение вошло автоматически по demo-token', autoConnected,
+    dom2.window.ZHKX && dom2.window.ZHKX.Sync ? dom2.window.ZHKX.Sync.info().status : 'нет Sync');
+  checkTrue('демо-режим: токен сохранён в браузере',
+    /"token":"demo-token"/.test(dom2.window.localStorage.getItem('zhkx.server.v1') || ''),
+    String(dom2.window.localStorage.getItem('zhkx.server.v1')).slice(0, 120));
+  checkTrue('демо-режим: данные получены с сервера', dom2.window.ZHKX.State.get().journal.length >= 1,
+    String(dom2.window.ZHKX.State.get().journal.length));
+  checkTrue('демо-режим: без ошибок в консоли', consoleErrors2.length === 0, consoleErrors2.slice(0, 3).join(' | '));
+  dom2.window.close();
 }
 
 /* ========================================================================= */

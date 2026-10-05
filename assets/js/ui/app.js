@@ -85,6 +85,15 @@
           App.buildTopbar();
           App.render();
           App.toast('Данные загружены с сервера: ревизия r' + info.revision, 'ok', 6000);
+        } else if (info.status === 'unauthorized' && info.demoAuth) {
+          /* Песочница запущена с ZHKX_DEMO_AUTH=1 — подключаемся без ввода токена */
+          Sync.login('demo-token').then(function () {
+            App.buildTopbar();
+            App.render();
+            App.toast('Демо-режим сервера: вход выполнен автоматически (токен demo-token), данные загружены.', 'ok', 8000);
+          }).catch(function (e) {
+            App.toast('Автовход не удался: ' + e.message, 'warn');
+          });
         } else if (info.status === 'unauthorized') {
           App.toast('Сервер найден: введите токен доступа в разделе «Данные» → «Сервер и синхронизация».', 'info', 12000);
         }
@@ -408,6 +417,13 @@
           }).catch(function (e) {
             App.toast('Не удалось выгрузить: ' + e.message, 'warn', 8000);
           });
+        },
+        'sync-demo-login': function () {
+          Sync.login('demo-token').then(function () {
+            App.buildTopbar();
+            App.render();
+            App.toast('Демо-режим: данные загружены с сервера', 'ok');
+          }).catch(function (e) { App.toast('Вход не выполнен: ' + e.message, 'bad'); });
         },
         'sync-logout': function () {
           Sync.logout();

@@ -161,7 +161,8 @@
                   '<input type="password" name="token" autocomplete="off" placeholder="например, demo-token"></div>' +
                   '<button class="btn btn--primary" type="submit">🔓 Войти</button>' +
                 '</form>' +
-                '<span class="muted-sm">Токен выдаётся командой <code>npm run token</code> (или <code>npm run dev</code> — демо-режим с токеном <code>demo-token</code>). Сохраняется только в этом браузере.</span>') +
+                '<span class="muted-sm">Токен выдаётся командой <code>npm run token</code> (или <code>npm run dev</code> — демо-режим с токеном <code>demo-token</code>). Сохраняется только в этом браузере.</span>' +
+                (i.demoAuth ? '<button class="btn btn--ghost btn--sm" data-action="sync-demo-login">🔓 Войти в демо-режиме (demo-token)</button>' : '')) +
             '<div class="row gap"><button class="btn btn--ghost btn--sm" data-action="sync-apply-url">Применить адрес</button>' +
               '<button class="btn btn--ghost btn--sm" data-action="sync-connect">🔌 Проверить связь</button></div>' +
           '</div>' +
