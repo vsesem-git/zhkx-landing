@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="ЖКУ Крым">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2563eb"/>
+      <stop offset="1" stop-color="#0ea5e9"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#g)"/>
+  <g fill="#ffffff">
+    <path d="M256 96 96 224v16h32v176h96V304h64v112h96V240h32v-16L256 96zm0 48 96 76v-6 172h-32V272H192v114h-32V214l96-70z"/>
+    <path d="M256 118l-88 64h176l-88-64z" opacity=".35"/>
+  </g>
+  <g fill="#ffffff" opacity=".92">
+    <circle cx="176" cy="392" r="10"/>
+    <circle cx="336" cy="392" r="10"/>
+    <path d="M256 336c22 26 34 42 34 58a34 34 0 0 1-68 0c0-16 12-32 34-58z"/>
+  </g>
+</svg>
