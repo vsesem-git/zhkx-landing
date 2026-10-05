@@ -1,0 +1,9 @@
+# В образ не нужны: история git, зависимости, данные, сборки демо
+.git
+.gitignore
+node_modules
+data
+dist
+*.zip
+*.tar.gz
+*.log

@@ -27,6 +27,10 @@ npm run test:server   # 126 тестов сервера и сквозного с
 npm run test:all      # всё вместе
 ```
 
+Готовые архивы для развёртывания — в разделе **Releases** репозитория
+(`zhkx-demo-static.zip` — демо без сервера, `zhkx-server.zip` — полный комплект),
+собираются командой `npm run build:demo`. Подробно — «Развёртывание на своём сервере» ниже.
+
 Полезные команды сервера: `npm run status` (ревизия, размер, история), `npm run token`
 (показать токен), `npm run revisions` (список ревизий), `npm run backup` (копия JSON),
 `npm run validate` (проверка data-слоя), `npm run reminders` (что уйдёт в Telegram).
@@ -359,6 +363,78 @@ window.ZHKX.StateData = { meta: { revision: 42 }, settings: {…}, objects: {…
 
 > Диаграммы используют Chart.js с CDN; при отсутствии интернета автоматически включается встроенный
 > canvas-рендерер с тем же поведением, поэтому приложение полностью работоспособно офлайн.
+
+## 🚀 Развёртывание на своём сервере
+
+Приложению нужен только Node.js 18+ (внешних зависимостей нет — сервер написан на стандартной
+библиотеке). Данные лежат в каталоге `data/`, который создаётся сам и в git не попадает.
+
+### Вариант 1. Проверка за минуту
+
+```bash
+git clone https://github.com/vsesem-git/zhkx-landing.git && cd zhkx-landing
+npm run dev                 # демо-режим: http://localhost:8000, вход без токена
+npm run seed -- --demo      # (необязательно) демо-история на сервер
+```
+
+Для боевого запуска: `ZHKX_TOKEN=$(openssl rand -hex 24) npm start` — токен возьмите из вывода
+или командой `npm run token`; введите его в приложении (окно «Сервер и синхронизация»).
+
+### Вариант 2. Docker
+
+```bash
+git clone https://github.com/vsesem-git/zhkx-landing.git && cd zhkx-landing
+docker build -f deploy/Dockerfile -t zhkx-crimea:2.0.0 .
+docker run -d --name zhkx -p 8000:8000 \
+  -v zhkx-data:/app/data \
+  -e ZHKX_TOKEN=свой-секрет \
+  --restart unless-stopped zhkx-crimea:2.0.0
+
+# или всё то же одной командой:
+ZHKX_TOKEN=свой-секрет docker compose -f deploy/docker-compose.yml up -d
+```
+
+Том `zhkx-data` хранит `state.js`, историю ревизий и `auth.json`; обновление —
+`docker compose -f deploy/docker-compose.yml build && … up -d` (данные сохраняются).
+
+### Вариант 3. systemd + nginx (как на своём сервере)
+
+```bash
+sudo useradd --system --home /opt/zhkx-landing zhkx
+sudo git clone https://github.com/vsesem-git/zhkx-landing.git /opt/zhkx-landing
+sudo install -d -o zhkx -g zhkx /var/lib/zhkx
+sudo cp /opt/zhkx-landing/deploy/zhkx.service /etc/systemd/system/
+sudo systemctl edit zhkx          # Environment=ZHKX_TOKEN=свой-секрет
+sudo systemctl daemon-reload && sudo systemctl enable --now zhkx
+```
+
+`deploy/zhkx.service` слушает `127.0.0.1:8000` и пишет данные в `/var/lib/zhkx`.
+`deploy/nginx.conf.example` — обратный прокси с HTTPS и basic-auth (лишним не будет: в приложении
+адреса, ФИО и лицевые счета). Резервная копия данных — `npm run backup`
+(или `tar czf backup.tgz -C /var/lib/zhkx .`).
+
+### Демо-бандлы для публикации
+
+```bash
+npm run build:demo
+```
+
+Собирает в `dist/` два архива (без внешних зависимостей, с контрольными суммами):
+
+| Архив | Что внутри | Куда подходит |
+|---|---|---|
+| `zhkx-demo-static.zip` (~116 КБ) | только интерфейс: `index.html`, `assets/`, манифест, service worker | любой статический хостинг, GitHub Pages, демонстрация без сервера: история — в localStorage браузера, при первом открытии подставляется демо-история |
+| `zhkx-server.zip` (~200 КБ) | приложение + сервер + `tools/` + `deploy/` + README | свой сервер: `npm start`, Docker, systemd |
+
+Статическая сборка проверена тестом: при отсутствии API-сервера приложение честно переходит
+в локальный режим, ничего не ломается и не пишет ошибок в консоль.
+
+> ⚠️ **О доступе.** В статической сборке справочник объектов (`assets/js/data/config.js`) открыт
+> любому, кто откроет страницу: адреса, ФИО, лицевые счета. Для публичного демо включайте
+> basic-auth (см. `deploy/nginx.conf.example`) или используйте серверную сборку с токеном.
+> Архив данных `data/` в git и в релизы не попадает — он создаётся на вашем сервере.
+
+---
 
 ## ⚠️ Что стоит уточнить
 

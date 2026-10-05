@@ -1,0 +1,45 @@
+# ============================================================================
+#  ЖКУ · Крым — systemd-юнит для установки на свой сервер
+#  ---------------------------------------------------------------------------
+#  Установка:
+#    1. Разложить проект, например:  /opt/zhkx-landing
+#    2. Создать системного пользователя:  sudo useradd --system --home /opt/zhkx-landing zhkx
+#    3. Права на данные:  sudo install -d -o zhkx -g zhkx /var/lib/zhkx
+#    4. Скопировать юнит:  sudo cp deploy/zhkx.service /etc/systemd/system/
+#    5. Задать токен:      sudo systemctl edit zhkx      → Environment=ZHKX_TOKEN=…
+#    6. Включить:          sudo systemctl daemon-reload && sudo systemctl enable --now zhkx
+#    7. Проверить:         systemctl status zhkx  ·  journalctl -u zhkx -f
+# ============================================================================
+[Unit]
+Description=ЖКУ · Крым — учёт коммунальных услуг (сервер + приложение)
+Documentation=file:/opt/zhkx-landing/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=zhkx
+Group=zhkx
+WorkingDirectory=/opt/zhkx-landing
+ExecStart=/usr/bin/node server/index.js
+Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
+Environment=PORT=8000
+Environment=ZHKX_DATA_DIR=/var/lib/zhkx
+# Environment=ZHKX_TOKEN=впишите-свой-токен
+# Environment=ZHKX_TELEGRAM_TOKEN=123456:AA…
+# Environment=ZHKX_TELEGRAM_CHAT=123456789
+Restart=on-failure
+RestartSec=3
+# Ограничения безопасности (приложению нужен только свой каталог данных)
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/zhkx
+CapabilityBoundingSet=
+AmbientCapabilities=
+MemoryMax=256M
+
+[Install]
+WantedBy=multi-user.target

@@ -20,6 +20,7 @@
     "token": "node server/cli.js token",
     "revisions": "node server/cli.js revisions",
     "backup": "node server/cli.js backup",
+    "build:demo": "node tools/build-demo.mjs",
     "reminders": "node server/cli.js reminders",
     "validate": "node server/cli.js validate",
     "test": "node tools/selftest.mjs",
