@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="ЖКУ Крым">
+  <defs>
+    <linearGradient id="gm" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2563eb"/>
+      <stop offset="1" stop-color="#0ea5e9"/>
+    </linearGradient>
+  </defs>
+  <!-- maskable: сюжет в безопасной зоне 80% -->
+  <rect width="512" height="512" fill="url(#gm)"/>
+  <g fill="#ffffff">
+    <path d="M256 132 156 212v12h20v112h56v-70h48v70h56V224h20v-12l-100-80zm0 30 60 48h-120l60-48z"/>
+    <path d="M256 322c14 17 22 27 22 37a22 22 0 0 1-44 0c0-10 8-20 22-37z"/>
+  </g>
+</svg>

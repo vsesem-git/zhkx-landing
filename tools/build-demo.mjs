@@ -1,7 +1,12 @@
 /* ============================================================================
  *  tools/build-demo.mjs — сборка демо-бандлов для публикации и развёртывания
  *  ---------------------------------------------------------------------------
- *  Запуск:  npm run build:demo        (результат — в каталоге dist/)
+ *  Запуск:  npm run build:demo
+ *
+ *  Результат:
+ *    • docs/                       — статическое демо прямо в репозитории (для
+ *                                    развёртывания копированием и GitHub Pages);
+ *    • dist/*.zip                  — те же файлы архивами для скачивания.
  *
  *  Собирает два архива (ZIP, без внешних зависимостей):
  *
@@ -164,11 +169,14 @@ ${'='.repeat(60)}
 
 Как развернуть
 --------------
-1. Скопируйте содержимое архива в каталог веб-сервера, например:
+1. Скопируйте эту папку (её содержимое) в каталог веб-сервера, например:
      sudo mkdir -p /var/www/zhkx-demo
-     sudo cp -r ./* /var/www/zhkx-demo/
+     sudo cp -r docs/* /var/www/zhkx-demo/          # из клона репозитория
+   или, с локального компьютера:
+     rsync -a docs/ user@ваш-сервер:/var/www/zhkx-demo/
 2. Откройте в браузере (или настройте nginx на этот каталог):
      http://ваш-сервер/zhkx-demo/
+   Он же может быть источником GitHub Pages: Settings → Pages → ветка + /docs.
 3. Интернет не требуется: Chart.js подгружается с CDN, но при его отсутствии
    автоматически включается встроенный canvas-рендерер диаграмм.
 
@@ -219,12 +227,27 @@ ${'='.repeat(60)}
 fs.rmSync(DIST, { recursive: true, force: true });
 fs.mkdirSync(DIST, { recursive: true });
 
+/* Статическое демо в репозитории: docs/ — складывается копированием на сервер,
+   и его же можно указать как источник GitHub Pages (ветка → /docs). */
+const DOCS = path.join(ROOT, 'docs');
+
+function writeDocs(entries) {
+  fs.rmSync(DOCS, { recursive: true, force: true });
+  fs.mkdirSync(DOCS, { recursive: true });
+  for (const entry of entries) {
+    const full = path.join(DOCS, entry.name);
+    fs.mkdirSync(path.dirname(full), { recursive: true });
+    fs.writeFileSync(full, entry.data);
+  }
+}
+
 const staticEntries = [
   ...readFiles(APP_FILES),
   { name: 'ПРОЧТИ-МЕНЯ.txt', data: Buffer.from(DEMO_README, 'utf8') }
 ];
 const staticZip = createZip(staticEntries);
 fs.writeFileSync(path.join(DIST, 'zhkx-demo-static.zip'), staticZip);
+writeDocs(staticEntries);
 
 const serverEntries = [
   ...readFiles(SERVER_FILES),
@@ -241,9 +264,13 @@ fs.writeFileSync(path.join(DIST, 'zhkx-server.zip.sha256'), sha256(serverZip) + 
 const kb = (b) => (b / 1024).toFixed(1) + ' КБ';
 console.log('\n  📦  Сборка демо-бандлов ЖКУ · Крым v' + VERSION);
 console.log('  ─────────────────────────────────────────────────────────');
+console.log('  docs/                      ' + kb(staticZip.length).padStart(9) + '  ' + staticEntries.length + ' файлов — демо в репозитории (для своего сервера и GitHub Pages)');
 console.log('  dist/zhkx-demo-static.zip  ' + kb(staticZip.length).padStart(9) + '  ' + staticEntries.length + ' файлов — интерфейс без сервера');
 console.log('  dist/zhkx-server.zip       ' + kb(serverZip.length).padStart(9) + '  ' + serverEntries.length + ' файлов — приложение + сервер + deploy/');
 console.log('  Контрольные суммы: dist/*.sha256');
 console.log('  ─────────────────────────────────────────────────────────');
-console.log('  Публикация в GitHub:  gh release create v' + VERSION + ' dist/*.zip dist/*.sha256 -t "…" -n "…"');
-console.log('  Развёртывание:        см. deploy/ (Docker, compose, systemd, nginx)\n');
+console.log('  Разложить демо на своём сервере:  rsync -a docs/ user@сервер:/var/www/zhkx-demo/');
+console.log('  Включить GitHub Pages:            gh api -X POST repos/ВЛАДЕЛЕЦ/РЕПО/pages \\');
+console.log('                                      -f "source[branch]=ВЕТКА" -f "source[path]=/docs"');
+console.log('  Опубликовать релиз с архивами:    gh release create v' + VERSION + ' dist/*.zip dist/*.sha256');
+console.log('  Развёртывание с сервером:         см. deploy/ (Docker, compose, systemd, nginx)\n');
