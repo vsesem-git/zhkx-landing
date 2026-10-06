@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<title>ЖКУ · Крым — личная система автоматического учёта коммунальных услуг</title>
+<meta name="description" content="Личный кабинет учёта ЖКУ по 6 объектам недвижимости в Крыму: электричество по ступенчатым тарифным сеткам, вода ГУП РК «Вода Крыма», содержание МКД, капремонт, интернет, авансовые кошельки, прогнозы и мониторинг госповерки счётчиков.">
+<meta name="author" content="Личный кабинет ЖКУ">
+<meta name="theme-color" content="#0b1220">
+<link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/icons/icon.svg">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ЖКУ Крым">
+<link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+
+<a class="skip-link" href="#view-host">Перейти к содержимому</a>
+
+<header class="topbar">
+  <div class="topbar__row">
+    <div class="brand">
+      <span class="brand__logo" aria-hidden="true">🏠</span>
+      <div class="brand__text">
+        <b>ЖКУ · Крым</b>
+        <span class="brand__sub" id="app-version">v1.0.0</span>
+      </div>
+    </div>
+
+    <div class="topbar__controls">
+      <label class="topbar__field">
+        <span>Период</span>
+        <span class="period-switch">
+          <button class="btn btn--icon" data-action="period-prev" title="Предыдущий месяц" aria-label="Предыдущий месяц">◀</button>
+          <select id="period-select" aria-label="Расчётный период"></select>
+          <button class="btn btn--icon" data-action="period-next" title="Следующий месяц" aria-label="Следующий месяц">▶</button>
+        </span>
+      </label>
+      <label class="topbar__field">
+        <span>Активный объект</span>
+        <select id="object-select" aria-label="Активный объект"></select>
+      </label>
+      <span id="sync-badge" class="sync-badge-host"></span>
+      <button class="btn btn--ghost btn--sm" data-action="export-json" title="Скачать JSON-бэкап">💾 Бэкап</button>
+      <button class="btn btn--ghost btn--sm" id="theme-toggle" data-action="theme">☀️ Светлая тема</button>
+    </div>
+  </div>
+
+  <div class="topbar__row topbar__row--stats">
+    <div class="header-stats" id="header-stats" aria-live="polite"></div>
+    <div class="storage-note" id="storage-note"></div>
+  </div>
+
+  <nav class="tabs" id="tabs" role="tablist" aria-label="Разделы приложения"></nav>
+</header>
+
+<main class="wrap">
+  <noscript>
+    <div class="empty empty--bad">Для работы системы учёта ЖКУ необходимо включить JavaScript: все расчёты выполняются локально в браузере.</div>
+  </noscript>
+  <div id="view-host" tabindex="-1"></div>
+</main>
+
+<footer class="footer">
+  <div class="footer__inner">
+    <div>
+      <b>Источник правды:</b> <code>assets/js/data/config.js</code> — реестр 6 объектов с лицевыми счетами (Крымэнерго и Вода Крыма),
+      тарифные сетки электроэнергии (город+плита / негазифицирован+город / село), тарифы воды ГУП РК «Вода Крыма» с графиком по периодам,
+      исторические архивы водомеров, параметры и даты госповерки приборов учёта.
+    </div>
+    <div class="footer__meta">
+      <span id="chart-engine">Диаграммы: инициализация…</span>
+      <span>Данные хранятся на сервере в <code>data/state.js</code> (ревизии — <code>data/history/</code>), в браузере — локальная копия для офлайн-режима.</span>
+      <span>Расчётный движок: прогрессивные ступени, <code>core/tariff-engine.js</code></span>
+    </div>
+  </div>
+</footer>
+
+<div id="offline-bar" class="offline-bar" hidden aria-live="polite"></div>
+<div id="modal-host" hidden></div>
+<div id="toast-host" class="toast-host" aria-live="polite"></div>
+
+<!-- ==== DATA-СЛОЙ (Source of Truth): реестр объектов, тарифы, счётчики, госповерка ==== -->
+<script src="assets/js/data/config.js"></script>
+<!-- ==== Ядро: утилиты, расчётный движок, состояние (localStorage), аналитика ==== -->
+<script src="assets/js/core/utils.js"></script>
+<script src="assets/js/core/tariff-engine.js"></script>
+<script src="assets/js/core/state.js"></script>
+<script src="assets/js/core/analytics.js"></script>
+<script src="assets/js/core/sync.js"></script>
+<!-- ==== Интерфейс: Chart.js (+ резервный canvas-рендерер), виды, формы, контроллер ==== -->
+<script src="assets/js/ui/vendor-chartjs.js"></script>
+<script src="assets/js/ui/charts.js"></script>
+<script src="assets/js/ui/views.js"></script>
+<script src="assets/js/ui/forms.js"></script>
+<script src="assets/js/ui/sync-ui.js"></script>
+<script src="assets/js/ui/app.js"></script>
+<script src="assets/js/ui/offline.js"></script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+# ЖКУ · Крым — пример настройки nginx для VPS (nginx + PHP-FPM)
+# Проверено для https://сервер/zhkx/  и  https://сервер/   (папка в корне)
+#
+# 1. Скопируйте папку с приложением, например в /var/www/zhkx
+# 2. Создайте /etc/nginx/sites-available/zhkx.conf с этим содержимым
+# 3. ln -s /etc/nginx/sites-available/zhkx.conf /etc/nginx/sites-enabled/
+# 4. nginx -t && systemctl reload nginx
+#
+# Замените сервер и путь. unix:/run/php/php8.2-fpm.sock — сокет вашего PHP-FPM
+# (посмотрите версию: ls /run/php/).
+
+server {
+    listen 80;
+    server_name ваш-сервер.example;
+
+    root /var/www/zhkx;
+    index index.html index.php;
+
+    charset utf-8;
+    client_max_body_size 16m;          # резервные копии JSON бывают крупными
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Данные приложения: только через api.php, наружу — запрет
+    location ~ ^/(zhkx-data|data)/ {
+        deny all;
+        return 404;
+    }
+
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/run/php/php8.2-fpm.sock;
+        fastcgi_read_timeout 60s;
+    }
+
+    # Интерфейс можно кэшировать, данные — нет
+    location ~* \.(css|js|svg|webmanifest)$ {
+        expires 7d;
+        add_header Cache-Control "public";
+    }
+}

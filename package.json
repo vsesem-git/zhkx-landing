@@ -1,0 +1,37 @@
+{
+  "name": "zhkx-crimea",
+  "version": "2.1.0",
+  "private": true,
+  "description": "ЖКУ · Крым — система учёта коммунальных услуг по 6 объектам: папка для VPS с PHP (положил и открыл), Node.js-сервер с данными в .js-файлах, интерфейс работает офлайн",
+  "keywords": [
+    "жку",
+    "крым",
+    "тарифы",
+    "электроэнергия",
+    "госповерка",
+    "localstorage"
+  ],
+  "license": "MIT",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "ZHKX_DEMO_AUTH=1 node server/index.js",
+    "seed": "node tools/seed-server.mjs",
+    "status": "node server/cli.js status",
+    "token": "node server/cli.js token",
+    "revisions": "node server/cli.js revisions",
+    "backup": "node server/cli.js backup",
+    "reminders": "node server/cli.js reminders",
+    "validate": "node server/cli.js validate",
+    "build:demo": "node tools/build-demo.mjs",
+    "build:dropin": "node tools/build-dropin.mjs",
+    "build": "node tools/build-dropin.mjs && node tools/build-demo.mjs",
+    "test:php": "node tools/phptest.mjs",
+    "test": "node tools/selftest.mjs",
+    "test:dom": "node tools/domtest.mjs",
+    "test:server": "node tools/servertest.mjs",
+    "test:all": "node tools/selftest.mjs && node tools/domtest.mjs && node tools/servertest.mjs && node tools/phptest.mjs"
+  },
+  "devDependencies": {
+    "jsdom": "^30.0.0"
+  }
+}
