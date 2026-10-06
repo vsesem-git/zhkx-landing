@@ -88,6 +88,7 @@ function objects() {
         internetEnabled: o.services.internet.enabled !== false,
         electricity: {
           account: o.account,
+          enabled: o.services.electricity.enabled !== false,
           category: o.services.electricity.category,
           zones: o.services.electricity.zones,
           meter: o.services.electricity.meter
@@ -95,8 +96,10 @@ function objects() {
         water: {
           account: o.services.water.account || null,
           accountNote: o.services.water.accountNote || null,
+          enabled: o.services.water.enabled !== false,
           archive: (o.services.water.archive || []).length
-        }
+        },
+        archiveMeta: o.services.water.archiveMeta || null,
       },
       capRepairMonthly: Math.round(o.area * o.services.caprepair.rate * 100) / 100,
       maintenanceMonthly: Math.round(o.area * o.services.maintenance.rate * 100) / 100

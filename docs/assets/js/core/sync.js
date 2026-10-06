@@ -4,6 +4,11 @@
  *  Приложение работает офлайн-first: все действия мгновенно попадают в
  *  локальное состояние и в очередь операций, а сервер получает их пачкой.
  *
+ *  Поддерживаются два серверных движка (клиент определяет их сам):
+ *    • PHP на обычном хостинге — api.php рядом с index.html, данные пишутся
+ *      в zhkx-data/state.js. Достаточно залить папку и открыть её в браузере;
+ *    • Node.js — server/index.js, данные в data/state.js.
+ *
  *  Режимы работы:
  *    • «Сервер»    — приложение открыто с того же адреса, что и API;
  *    • «Локально»  — сервера нет (открыт файл или статический хостинг):
@@ -45,6 +50,11 @@
     lastSyncAt: null,
     lastError: null
   };
+
+  /* Каким движком отвечает сервер и по какому адресу к нему обращаться.
+     apiKind: 'php' (api.php на хостинге) | 'node' (server/index.js) | null (не найден) */
+  var apiKind = null;
+  var apiBase = '/';
 
   var status = {
     code: 'init',            // init | local | offline | unauthorized | syncing | synced | pending | error | disabled
@@ -108,8 +118,12 @@
   function info() {
     return {
       supported: supported,
-      url: cfg.url || global.location.origin,
+      url: resolvedUrl(),
       sameOrigin: !cfg.url,
+      apiKind: apiKind,
+      apiKindLabel: apiKind === 'php' ? 'PHP на хостинге' : (apiKind === 'node' ? 'Node.js' : '—'),
+      open: openMode(),
+      exposed: status.health ? status.health.dataDirExposed : undefined,
       token: !!cfg.token,
       autoSync: cfg.autoSync,
       clientId: cfg.clientId,
@@ -126,10 +140,119 @@
     };
   }
 
+  /* ------------------------------------------------------- адрес и определение */
+
+  /** Каталог, в котором открыто приложение (для относительных запросов) */
+  function documentDir() {
+    var href = (global.document && global.document.baseURI) || global.location.href;
+    return href.replace(/[?#].*$/, '').replace(/\/[^/]*$/, '/');
+  }
+
+  function joinUrl(base, path) {
+    return String(base).replace(/\/+$/, '') + '/' + String(path).replace(/^\/+/, '');
+  }
+
+  /** Человекочитаемый адрес сервера */
+  function resolvedUrl() {
+    if (!apiKind) return cfg.url || global.location.origin;
+    try {
+      return (new URL(apiBase, global.location.href).href.replace(/\/+$/, '')) || global.location.origin;
+    } catch (e) {
+      return apiBase;
+    }
+  }
+
+  /** Режим «сервер не требует токена» (PHP-версия до «Закрыть паролем») */
+  function openMode() {
+    var auth = status.health && status.health.auth;
+    return !!(auth && (auth.open === true || auth.authRequired === false));
+  }
+
+  function canCall() { return !!cfg.token || openMode(); }
+
+  /**
+   * Ссылка на конкретный маршрут API с учётом движка сервера.
+   * PHP:  api.php?route=state   ·   Node:  /api/state
+   */
+  function endpoint(path, params) {
+    var query = '';
+    if (params) {
+      Object.keys(params).forEach(function (key) {
+        var value = params[key];
+        if (value === undefined || value === null || value === '') return;
+        query += (query ? '&' : '') + encodeURIComponent(key) + '=' + encodeURIComponent(value);
+      });
+    }
+
+    if (apiKind === 'php') {
+      var phpUrl = joinUrl(apiBase, 'api.php') + '?route=' + encodeURIComponent(path);
+      return query ? phpUrl + '&' + query : phpUrl;
+    }
+
+    var nodeUrl = joinUrl(apiBase, path === 'state-file' ? 'data/state.js' : 'api/' + path);
+    return query ? nodeUrl + '?' + query : nodeUrl;
+  }
+
+  /** Проверка одного кандидата: отвечает ли по этому адресу наш сервер */
+  function probe(candidate) {
+    var controller = typeof global.AbortController !== 'undefined' ? new global.AbortController() : null;
+    var timer = setTimeout(function () { if (controller) controller.abort(); }, 6000);
+    return global.fetch(candidate.url, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+      cache: 'no-store',
+      credentials: 'omit',
+      signal: controller ? controller.signal : undefined
+    }).then(function (res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    }).then(function (json) {
+      clearTimeout(timer);
+      if (json && json.ok === true && json.app && json.app.id === 'zhkx-crimea') {
+        return { candidate: candidate, health: json };
+      }
+      return null;
+    }).catch(function () {
+      clearTimeout(timer);
+      return null;
+    });
+  }
+
+  /** Поиск сервера: сначала PHP рядом со страницей, затем Node */
+  function discover() {
+    if (!supported) return Promise.resolve(null);
+    var dir = cfg.url
+      ? (/^https?:/i.test(cfg.url) ? cfg.url.replace(/\/+$/, '') + '/' : joinUrl(documentDir(), cfg.url))
+      : documentDir();
+
+    var list = [{ kind: 'php', url: joinUrl(dir, 'api.php') + '?route=health', base: dir }];
+    if (!cfg.url) {
+      list.push({ kind: 'php', url: '/api.php?route=health', base: '/' });
+      list.push({ kind: 'node', url: joinUrl(dir, 'api/health'), base: dir });
+      list.push({ kind: 'node', url: '/api/health', base: '/' });
+    } else {
+      list.push({ kind: 'node', url: joinUrl(dir, 'api/health'), base: dir });
+    }
+
+    var attempt = function (index) {
+      if (index >= list.length) return Promise.resolve(null);
+      return probe(list[index]).then(function (found) {
+        if (found) {
+          apiKind = found.candidate.kind;
+          apiBase = found.candidate.base;
+          status.health = found.health;
+          return found.health;
+        }
+        return attempt(index + 1);
+      });
+    };
+    return attempt(0);
+  }
+
   /* ------------------------------------------------------------------ HTTP */
   function api(path, options) {
     var o = options || {};
-    var url = (cfg.url || '') + path;
+    var url = endpoint(path, o.params);
     var headers = Object.assign({ 'Accept': 'application/json' }, o.headers || {});
     if (o.body !== undefined) headers['Content-Type'] = 'application/json';
     if (cfg.token) headers['Authorization'] = 'Bearer ' + cfg.token;
@@ -158,19 +281,44 @@
 
   /* -------------------------------------------------------------- проверка */
   function health() {
-    return api('/api/health').then(function (json) {
+    return api('health').then(function (json) {
       status.health = json;
       cfg.lastRevision = json.revision || 0;
       saveCfg();
+      verifyExposure();
       return json;
     });
+  }
+
+  /**
+   * Проверяем сами (из браузера), не отдаётся ли файл состояния по прямой ссылке.
+   * Серверная самопроверка может быть недоступна (запрет исходящих запросов,
+   * однопоточный сервер) — тогда решает этот запрос: если файл читается и в нём
+   * виден маркер состояния, каталог данных открыт наружу.
+   */
+  function verifyExposure() {
+    if (!apiKind || !supported) return;
+    var url = apiKind === 'php'
+      ? joinUrl(apiBase, 'zhkx-data/state.js')
+      : joinUrl(apiBase, 'data/state.js');
+    global.fetch(url, { cache: 'no-store', credentials: 'omit' }).then(function (res) {
+      if (!res.ok && res.status !== 0) return '';   // закрыто — и хорошо
+      return res.text();
+    }).then(function (text) {
+      var exposed = /ZHKX\.StateData/.test(text || '');
+      if (!status.health) return;
+      if (status.health.dataDirExposed === exposed) return;
+      status.health.dataDirExposed = exposed;
+      status.health.dataDirExposedBy = 'browser';
+      listeners.forEach(function (fn) { try { fn(status); } catch (e) { /* ignore */ } });
+    }).catch(function () { /* нет сети или запрещено — оставляем как есть */ });
   }
 
   /* ------------------------------------------------------------------- pull */
   function pull(options) {
     var o = options || {};
-    if (!cfg.token) return Promise.reject(Object.assign(new Error('Нет токена доступа'), { status: 401 }));
-    return api('/api/state').then(function (json) {
+    if (!canCall()) return Promise.reject(Object.assign(new Error('Нет токена доступа'), { status: 401 }));
+    return api('state').then(function (json) {
       State.applyServerState(json.state, { keepPending: o.keepPending !== false });
       State.setRevision(json.revision, json.updatedAt);
       cfg.lastRevision = json.revision;
@@ -193,14 +341,14 @@
       if (o.force) return pull();
       return Promise.resolve({ ok: true, sent: 0 });
     }
-    if (!cfg.token) {
+    if (!canCall()) {
       setStatus('unauthorized', { detail: 'Очередь: ' + ops.length });
       return Promise.reject(Object.assign(new Error('Требуется токен доступа'), { status: 401 }));
     }
 
     setStatus('syncing', { detail: 'Отправка ' + ops.length + ' ' + U.plural(ops.length, 'операции', 'операций', 'операций') });
 
-    return api('/api/events', {
+    return api('events', {
       method: 'POST',
       body: { ops: ops, baseRevision: State.revision(), clientId: cfg.clientId }
     }).then(function (json) {
@@ -231,9 +379,9 @@
   /** Полная отправка локального состояния (используется при импорте/демо/сбросе) */
   function pushFullState(reason) {
     if (!supported) return Promise.reject(new Error('Сервер не настроен: приложение работает локально'));
-    if (!cfg.token) return Promise.reject(Object.assign(new Error('Требуется токен доступа'), { status: 401 }));
+    if (!canCall()) return Promise.reject(Object.assign(new Error('Требуется токен доступа'), { status: 401 }));
     var state = State.snapshotForServer();
-    return api('/api/import', {
+    return api('import', {
       method: 'POST',
       body: { state: state, clientId: cfg.clientId, reason: reason || 'full-push' }
     }).then(function (json) {
@@ -248,11 +396,29 @@
   function login(token) {
     var clean = String(token || '').trim();
     if (!clean) return Promise.reject(new Error('Введите токен доступа'));
-    return api('/api/login', { method: 'POST', body: { token: clean } }).then(function () {
+    return api('login', { method: 'POST', body: { token: clean } }).then(function () {
       cfg.token = clean;
       cfg.lastError = null;
       saveCfg();
       return health().then(function () { return pull(); });
+    });
+  }
+
+  /**
+   * «Закрыть паролем»: PHP-версия по умолчанию открыта — здесь генерируем токен
+   * и сразу запоминаем его в этом браузере.
+   */
+  function lock(token) {
+    return api('lock', { method: 'POST', body: { token: String(token || '').trim() } }).then(function (json) {
+      if (json && json.token) {
+        cfg.token = json.token;
+        cfg.lastError = null;
+        saveCfg();
+      }
+      return health().then(function () {
+        if (cfg.token) return pull();
+        return null;
+      }).then(function () { return json; });
     });
   }
 
@@ -272,6 +438,8 @@
 
   function setServerUrl(url) {
     cfg.url = String(url || '').replace(/\/+$/, '');
+    apiKind = null;
+    apiBase = '/';
     saveCfg();
     return connect();
   }
@@ -331,7 +499,7 @@
     return connect();
   }
 
-  /** Подключение: проверяем сервер, при наличии токена забираем данные */
+  /** Подключение: ищем сервер; в открытом режиме работаем сразу, иначе нужен токен */
   function connect() {
     if (!supported) return Promise.resolve(setStatus('local', {
       detail: global.location.protocol === 'file:'
@@ -339,11 +507,28 @@
         : 'Браузер не поддерживает fetch — работаем локально'
     }));
     setStatus('init');
-    return health().then(function (json) {
-      if (!cfg.token) {
-        setStatus('unauthorized', { detail: 'Введите токен доступа, чтобы включить синхронизацию' });
+    return discover().then(function (json) {
+      if (!json) {
+        /* Сервера нет вовсе (статический хостинг): приложение работает локально */
+        apiKind = null;
+        apiBase = '/';
+        status.health = null;
+        return setStatus('local', {
+          detail: 'Сервер не обнаружен — данные хранятся только в этом браузере. Залейте папку с api.php или запустите server/index.js.'
+        });
+      }
+
+      status.health = json;
+      verifyExposure();
+      if (!canCall()) {
+        setStatus('unauthorized', {
+          detail: (json.auth && json.auth.demoAuth)
+            ? 'Демо-режим сервера: вход выполняется автоматически'
+            : 'Введите токен доступа, чтобы включить синхронизацию'
+        });
         return info();
       }
+
       return pull().then(function () {
         if (State.pendingCount()) return flush();
         return info();
@@ -352,20 +537,16 @@
         else setStatus('offline', { detail: err.message });
         return info();
       });
-    }).catch(function (err) {
-      /* Сервера нет вовсе: приложение продолжает работать локально */
-      status.health = null;
-      return setStatus('local', { detail: 'Сервер не обнаружен — данные хранятся только в этом браузере' });
     });
   }
 
   /* --------------------------------------------------------- серверные данные */
   function history(limit) {
-    return api('/api/revisions' + (limit ? '?limit=' + limit : ''));
+    return api('revisions', limit ? { limit: limit } : null);
   }
 
   function restore(file) {
-    return api('/api/restore', { method: 'POST', body: { file: file, clientId: cfg.clientId } })
+    return api('restore', { method: 'POST', body: { file: file, clientId: cfg.clientId } })
       .then(function (json) {
         State.applyServerState(json.state, { keepPending: false });
         State.setRevision(json.revision, null);
@@ -373,17 +554,24 @@
       });
   }
 
-  function reminders() { return api('/api/reminders'); }
+  function reminders() { return api('reminders'); }
 
-  function sendReminders() { return api('/api/reminders/send', { method: 'POST', body: {} }); }
+  function sendReminders() { return api('reminders/send', { method: 'POST', body: {} }); }
 
-  function serverConfig() { return api('/api/config'); }
+  function serverConfig() { return api('config'); }
 
   function isSupported() { return supported; }
 
+  /** Ссылка на скачивание файла состояния с сервера (с токеном в адресе) */
   function downloadServerState() {
-    var url = (cfg.url || '') + '/data/state.js?token=' + encodeURIComponent(cfg.token);
-    return url;
+    if (apiKind === 'php') return endpoint('state-file', { token: cfg.token });
+    return joinUrl(apiBase, 'data/state.js') + '?token=' + encodeURIComponent(cfg.token || '');
+  }
+
+  /** Ссылка на страницу проверки сервера (её показывает PHP-версия) */
+  function serverCheckUrl() {
+    if (apiKind === 'php') return joinUrl(apiBase, 'api.php');
+    return null;
   }
 
   var Sync = {
@@ -402,11 +590,16 @@
     info: info,
     onStatusChange: onStatusChange,
     config: function () { return cfg; },
+    lock: lock,
+    endpoint: endpoint,
+    discover: discover,
+    serverCheckUrl: serverCheckUrl,
     history: history,
     restore: restore,
     reminders: reminders,
     sendReminders: sendReminders,
     serverConfig: serverConfig,
+    verifyExposure: verifyExposure,
     downloadServerState: downloadServerState,
     isSupported: isSupported
   };

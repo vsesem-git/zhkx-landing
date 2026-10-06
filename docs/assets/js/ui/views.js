@@ -608,6 +608,9 @@
     var cards = objects.map(function (obj) {
       var info = Analytics.waterArchiveSummary(obj.id);
       var stats = info.stats;
+      /* Пометка «архив восстановлен» — данные-слой хранит происхождение архива */
+      var copy = Data.OBJECTS.filter(function (o) { return o.id === obj.id; })[0] || {};
+      var meta = (copy.services && copy.services.water && copy.services.water.archiveMeta) || null;
 
       if (!info.hasArchive) {
         return '<article class="card" id="archive-' + obj.id + '">' +
@@ -663,6 +666,14 @@
           '<div class="kpi kpi--ok"><div class="kpi__label">Израсходовано всего</div><div class="kpi__value">' + U.formatNumber(stats.totalConsumption, 0) + ' <small>м³</small></div>' +
             '<span class="kpi__delta">≈ ' + U.formatMoney(info.totalCost) + ' по текущему тарифу</span></div>' +
         '</div>' +
+
+        (meta && meta.source === 'reconstructed'
+          ? '<div class="notice notice--warn"><b>Архив восстановлен.</b> ' +
+            U.escapeHtml(meta.note || 'Значения требуют сверки с квитанциями.') +
+            ' Контрольные точки (стартовое и последнее показание, средние расходы, месяцы без расхода) совпадают с исходными, ' +
+            'промежуточные месяцы восстановлены правдоподобно. Пришлите исходные показания — заменю в data-слое ' +
+            '<code>assets/js/data/config.js</code>.</div>'
+          : '') +
 
         '<div class="chip-row">' +
           '<button class="btn btn--primary btn--sm" data-action="import-archive" data-object="' + obj.id + '">⬇️ Перенести архив в журнал</button>' +

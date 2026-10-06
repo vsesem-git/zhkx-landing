@@ -43,10 +43,16 @@
       State.load();
 
       if (!State.hasAnyData()) {
-        /* Первый запуск: наполняем демо-историей, чтобы интерфейс был «живым».
-           Любые данные можно очистить в разделе «Данные». */
-        State.seedDemo({ months: 12 });
-        this.firstRunSeeded = true;
+        /* Первый запуск. Демо-история нужна только там, где сервера нет:
+           если сервер есть, источник правды — он, и подмешивать выдуманные
+           начисления нельзя. Поэтому сначала спрашиваем сервер, а решаем —
+           в initSync() (см. demoSeedPending). */
+        if (Sync && Sync.isSupported && Sync.isSupported()) {
+          this.demoSeedPending = true;
+        } else {
+          State.seedDemo({ months: 12, bootstrap: true });
+          this.firstRunSeeded = true;
+        }
       }
 
       this.period = this.resolvePeriod();
@@ -60,6 +66,8 @@
 
       if (this.firstRunSeeded) {
         this.toast('Загружена демо-история за 12 месяцев. Очистить её можно в разделе «Данные».', 'ok', 9000);
+      } else if (this.demoSeedPending) {
+        this.toast('Проверяю сервер… данные загружаются.', 'info', 4000);
       }
       this.updateStorageNote();
       this.initSync();
@@ -81,10 +89,36 @@
       Sync.start().then(function () {
         App.renderSyncBadge();
         var info = Sync.info();
+        /* Решаем судьбу демо-истории: сервера нет — показываем демо,
+           сервер найден — работаем только с его данными. */
+        if (App.demoSeedPending) {
+          App.demoSeedPending = false;
+          if (info.status === 'local') {
+            State.seedDemo({ months: 12, bootstrap: true });
+            App.buildTopbar();
+            App.render();
+            App.toast('Сервер не найден: загружена демо-история за 12 месяцев (данные — в этом браузере). ' +
+              'Очистить её можно в разделе «Данные».', 'ok', 11000);
+          } else if (info.status === 'unauthorized') {
+            App.toast('Сервер найден, но нужен токен доступа: демо-история не загружена, ' +
+              'подключитесь в разделе «Данные» → «Сервер и синхронизация».', 'warn', 15000);
+          } else if (State.get().journal.length === 0) {
+            App.toast('Сервер подключён (' + info.apiKindLabel + '), но данных на нём пока нет. ' +
+              'Внесите первое начисление в разделе «Калькулятор» или загрузите демо-историю в разделе «Данные».', 'info', 16000);
+          } else {
+            App.toast('Сервер подключён (' + info.apiKindLabel + '): работаем с данными сервера.', 'ok', 9000);
+          }
+          App.renderSyncBadge();
+          App.render();
+        }
         if (info.status === 'synced') {
           App.buildTopbar();
           App.render();
           App.toast('Данные загружены с сервера: ревизия r' + info.revision, 'ok', 6000);
+          if (info.open) {
+            App.toast('Сервер найден (' + info.apiKindLabel + '), данные — в файле ' + info.health.app.stateFile +
+              '. Доступ пока открыт: закройте паролем в окне «Сервер и синхронизация».', 'info', 15000);
+          }
         } else if (info.status === 'unauthorized' && info.demoAuth) {
           /* Песочница запущена с ZHKX_DEMO_AUTH=1 — подключаемся без ввода токена */
           Sync.login('demo-token').then(function () {
@@ -97,7 +131,7 @@
         } else if (info.status === 'unauthorized') {
           App.toast('Сервер найден: введите токен доступа в разделе «Данные» → «Сервер и синхронизация».', 'info', 12000);
         }
-        if (info.pending && info.token) App.flushSync(true);
+        if (info.pending && (info.token || info.open)) App.flushSync(true);
       });
     },
 
@@ -417,6 +451,29 @@
           }).catch(function (e) {
             App.toast('Не удалось выгрузить: ' + e.message, 'warn', 8000);
           });
+        },
+        'sync-lock': function () {
+          if (!global.confirm('Закрыть доступ к серверу паролем?\nТокен создастся автоматически и сохранится в этом браузере.\nНа других устройствах его нужно будет ввести (файл: zhkx-data/auth.json).')) return;
+          Sync.lock().then(function (json) {
+            if (SyncUI) SyncUI.rememberToken(json.token);
+            App.renderSyncBadge();
+            App.toast('Доступ закрыт. Токен сохранён в этом браузере: ' + String(json.token || '').slice(0, 8) + '…', 'ok', 10000);
+            App.render();
+          }).catch(function (e) {
+            App.toast('Не удалось закрыть доступ: ' + e.message, 'bad', 9000);
+          });
+        },
+        'sync-copy-token': function () {
+          var input = document.getElementById('sync-token-value');
+          if (!input) return;
+          input.select();
+          try {
+            if (global.navigator.clipboard) global.navigator.clipboard.writeText(input.value);
+            else global.document.execCommand('copy');
+            App.toast('Токен скопирован в буфер обмена', 'ok');
+          } catch (e) {
+            App.toast('Скопируйте токен вручную: ' + input.value, 'warn', 15000);
+          }
         },
         'sync-demo-login': function () {
           Sync.login('demo-token').then(function () {

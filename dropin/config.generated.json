@@ -1,0 +1,615 @@
+{
+  "generatedAt": "2026-10-06T07:01:07.997Z",
+  "appVersion": "2.1.0",
+  "app": {
+    "id": "zhkx-crimea",
+    "version": "2.0.0",
+    "schemaVersion": 1
+  },
+  "source": "assets/js/data/config.js",
+  "objects": [
+    {
+      "id": "obj-01",
+      "index": 1,
+      "label": "кв. 31",
+      "account": "173701",
+      "els": null,
+      "address": "г. Алушта, ул. 60 лет СССР, д. 18, кв. 31",
+      "city": "Алушта",
+      "owner": "Бартошевская Л. Б.",
+      "area": 50,
+      "management": null,
+      "services": {
+        "maintenanceRate": 38.5,
+        "capRepairRate": 15,
+        "internetRate": 600,
+        "internetEnabled": true,
+        "electricity": {
+          "account": "173701",
+          "enabled": true,
+          "category": "city_stove",
+          "zones": 1,
+          "meter": {
+            "serial": "01722953",
+            "model": "NP-0610MMБ1F1SM-V",
+            "lastCheckDate": "2021-09-29",
+            "checkPeriodYears": 6
+          }
+        },
+        "water": {
+          "account": null,
+          "accountNote": "данные уточняются — лицевой счёт Вода Крыма не указан в квитанции",
+          "enabled": true,
+          "archive": 0
+        },
+        "archiveMeta": {
+          "source": "none",
+          "note": "архив показаний не предоставлен"
+        }
+      },
+      "capRepairMonthly": 750,
+      "maintenanceMonthly": 1925
+    },
+    {
+      "id": "obj-02",
+      "index": 2,
+      "label": "кв. 115",
+      "account": "100725",
+      "els": null,
+      "address": "г. Алушта, ул. 60 лет СССР, д. 18, кв. 115",
+      "city": "Алушта",
+      "owner": "Зеленова О. И.",
+      "area": 65,
+      "management": null,
+      "services": {
+        "maintenanceRate": 38.5,
+        "capRepairRate": 15,
+        "internetRate": 600,
+        "internetEnabled": true,
+        "electricity": {
+          "account": "100725",
+          "enabled": true,
+          "category": "city_stove",
+          "zones": 1,
+          "meter": {
+            "serial": "01756835",
+            "model": "NP-0610MMБ1F1SM-V",
+            "lastCheckDate": "2021-04-28",
+            "checkPeriodYears": 6
+          }
+        },
+        "water": {
+          "account": "16290_ALU",
+          "accountNote": null,
+          "enabled": true,
+          "archive": 19
+        },
+        "archiveMeta": {
+          "source": "reconstructed",
+          "note": "восстановлено по контрольным точкам — сверьте с квитанциями"
+        }
+      },
+      "capRepairMonthly": 975,
+      "maintenanceMonthly": 2502.5
+    },
+    {
+      "id": "obj-03",
+      "index": 3,
+      "label": "кв. 3",
+      "account": "103573",
+      "els": "10ОХ833358",
+      "address": "г. Алушта, ул. Юбилейная, д. 38, кв. 3",
+      "city": "Алушта",
+      "owner": "Василенко Е. Б.",
+      "area": 38.5,
+      "management": "ТСН «НАШ ДОМ»",
+      "services": {
+        "maintenanceRate": 29,
+        "capRepairRate": 11.46,
+        "internetRate": 600,
+        "internetEnabled": true,
+        "electricity": {
+          "account": "103573",
+          "enabled": true,
+          "category": "ungasified_city",
+          "zones": 2,
+          "meter": {
+            "serial": "011695136656042",
+            "model": "СЕ102М S7 145-AV",
+            "lastCheckDate": "2019-10-08",
+            "checkPeriodYears": 16
+          }
+        },
+        "water": {
+          "account": "19005_ALU",
+          "accountNote": null,
+          "enabled": true,
+          "archive": 15
+        },
+        "archiveMeta": {
+          "source": "reconstructed",
+          "note": "восстановлено по контрольным точкам — сверьте с квитанциями"
+        }
+      },
+      "capRepairMonthly": 441.21,
+      "maintenanceMonthly": 1116.5
+    },
+    {
+      "id": "obj-04",
+      "index": 4,
+      "label": "кв. 102",
+      "account": "104924",
+      "els": "20ОХ833333",
+      "address": "г. Алушта, ул. Юбилейная, д. 38, кв. 102",
+      "city": "Алушта",
+      "owner": "Василенко Е. А.",
+      "area": 52.6,
+      "management": "ТСН «НАШ ДОМ»",
+      "services": {
+        "maintenanceRate": 29,
+        "capRepairRate": 11.46,
+        "internetRate": 0,
+        "internetEnabled": false,
+        "electricity": {
+          "account": "104924",
+          "enabled": true,
+          "category": "ungasified_city",
+          "zones": 2,
+          "meter": {
+            "serial": "45458105",
+            "model": "Меркурий 200.02",
+            "lastCheckDate": "2022-09-06",
+            "checkPeriodYears": 16
+          }
+        },
+        "water": {
+          "account": "19050_ALU",
+          "accountNote": null,
+          "enabled": true,
+          "archive": 26
+        },
+        "archiveMeta": {
+          "source": "reconstructed",
+          "note": "восстановлено по контрольным точкам — сверьте с квитанциями"
+        }
+      },
+      "capRepairMonthly": 602.8,
+      "maintenanceMonthly": 1525.4
+    },
+    {
+      "id": "obj-05",
+      "index": 5,
+      "label": "кв. 108",
+      "account": "104987",
+      "els": "10ОХ833277",
+      "address": "г. Алушта, ул. Юбилейная, д. 38, кв. 108",
+      "city": "Алушта",
+      "owner": "Василенко Е. Б.",
+      "area": 37.9,
+      "management": "ТСН «НАШ ДОМ»",
+      "services": {
+        "maintenanceRate": 29,
+        "capRepairRate": 11.46,
+        "internetRate": 600,
+        "internetEnabled": true,
+        "electricity": {
+          "account": "104987",
+          "enabled": true,
+          "category": "ungasified_city",
+          "zones": 1,
+          "meter": {
+            "serial": "41286426",
+            "model": "Меркурий 201 5-50",
+            "lastCheckDate": "2020-01-20",
+            "checkPeriodYears": 16
+          }
+        },
+        "water": {
+          "account": "19056_ALU",
+          "accountNote": null,
+          "enabled": true,
+          "archive": 0
+        },
+        "archiveMeta": {
+          "source": "none",
+          "note": "архив показаний не предоставлен"
+        }
+      },
+      "capRepairMonthly": 434.33,
+      "maintenanceMonthly": 1099.1
+    },
+    {
+      "id": "obj-06",
+      "index": 6,
+      "label": "дом",
+      "account": "010588",
+      "els": null,
+      "address": "с. Перевальное, ул. Учительская, д. 1816/040701",
+      "city": "Перевальное",
+      "owner": "Василенко Е. А.",
+      "area": 120,
+      "management": null,
+      "services": {
+        "maintenanceRate": 0,
+        "capRepairRate": 0,
+        "internetRate": 750,
+        "internetEnabled": true,
+        "electricity": {
+          "account": "010588",
+          "enabled": true,
+          "category": "village",
+          "zones": 1,
+          "meter": {
+            "serial": "06130550",
+            "model": "AD13 A 2 FLRsZR-Tx",
+            "lastCheckDate": "2022-01-01",
+            "checkPeriodYears": 16
+          }
+        },
+        "water": {
+          "account": null,
+          "accountNote": "данные уточняются — лицевой счёт Вода Крыма не указан в квитанции",
+          "enabled": true,
+          "archive": 0
+        },
+        "archiveMeta": {
+          "source": "none",
+          "note": "архив показаний не предоставлен"
+        }
+      },
+      "capRepairMonthly": 0,
+      "maintenanceMonthly": 0
+    }
+  ],
+  "tariffs": {
+    "electricity": {
+      "city_stove": {
+        "id": "city_stove",
+        "label": "Город + плита",
+        "note": "Объекты № 1 и № 2 (одноставочный учёт)",
+        "scales": {
+          "single": {
+            "label": "Одноставочный учёт",
+            "hours": "круглосуточно",
+            "steps": [
+              {
+                "upTo": 250,
+                "rate": 4.33,
+                "title": "до 250 кВтч включительно"
+              },
+              {
+                "upTo": 800,
+                "rate": 5.45,
+                "title": "от 250 до 800 кВтч"
+              },
+              {
+                "upTo": null,
+                "rate": 9.2,
+                "title": "свыше 800 кВтч"
+              }
+            ]
+          }
+        }
+      },
+      "ungasified_city": {
+        "id": "ungasified_city",
+        "label": "Негазифицирован + город",
+        "note": "Объекты № 3, № 4 (День/Ночь) и № 5 (одноставочный)",
+        "scales": {
+          "single": {
+            "label": "Одноставочный учёт",
+            "hours": "круглосуточно",
+            "steps": [
+              {
+                "upTo": 3000,
+                "rate": 4.31,
+                "title": "до 3000 кВтч"
+              },
+              {
+                "upTo": 4700,
+                "rate": 5.42,
+                "title": "от 3000 до 4700 кВтч"
+              },
+              {
+                "upTo": null,
+                "rate": 9.2,
+                "title": "свыше 4700 кВтч"
+              }
+            ]
+          },
+          "day": {
+            "label": "День (Т1)",
+            "hours": "07:00–23:00",
+            "steps": [
+              {
+                "upTo": 3000,
+                "rate": 4.31,
+                "title": "до 3000 кВтч"
+              },
+              {
+                "upTo": 4700,
+                "rate": 5.42,
+                "title": "от 3000 до 4700 кВтч"
+              },
+              {
+                "upTo": null,
+                "rate": 9.2,
+                "title": "свыше 4700 кВтч"
+              }
+            ]
+          },
+          "night": {
+            "label": "Ночь (Т2)",
+            "hours": "23:00–07:00",
+            "steps": [
+              {
+                "upTo": 3000,
+                "rate": 3.02,
+                "title": "до 3000 кВтч"
+              },
+              {
+                "upTo": 4700,
+                "rate": 3.81,
+                "title": "от 3000 до 4700 кВтч"
+              },
+              {
+                "upTo": null,
+                "rate": 6.43,
+                "title": "свыше 4700 кВтч"
+              }
+            ]
+          }
+        }
+      },
+      "village": {
+        "id": "village",
+        "label": "Село",
+        "note": "Объект № 6 (с. Перевальное, ИЖС)",
+        "scales": {
+          "single": {
+            "label": "Одноставочный учёт",
+            "hours": "круглосуточно",
+            "steps": [
+              {
+                "upTo": 150,
+                "rate": 5.15,
+                "title": "до 150 кВтч включительно"
+              },
+              {
+                "upTo": 800,
+                "rate": 6.42,
+                "title": "от 150 до 800 кВтч"
+              },
+              {
+                "upTo": null,
+                "rate": 9.2,
+                "title": "свыше 800 кВтч"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "water": {
+      "actual_4796": {
+        "id": "actual_4796",
+        "label": "Актуальный тариф",
+        "rate": 47.96,
+        "note": "действует по умолчанию"
+      },
+      "archive_3702": {
+        "id": "archive_3702",
+        "label": "Архивный личный тариф",
+        "rate": 37.02,
+        "note": "исторический тариф владельца (с НДС)"
+      },
+      "indexed_5467": {
+        "id": "indexed_5467",
+        "label": "Индексируемый тариф",
+        "rate": 54.67,
+        "note": "переключаемый вариант, применяется после индексации"
+      }
+    },
+    "waterOrder": [
+      "actual_4796",
+      "archive_3702",
+      "indexed_5467"
+    ],
+    "waterDefault": "actual_4796",
+    "waterScheduleDefault": [
+      {
+        "fromPeriod": "2000-01",
+        "rateKey": "actual_4796",
+        "note": "базовый тариф"
+      }
+    ],
+    "rules": {
+      "moneyDecimals": 2,
+      "volumeDecimals": 3,
+      "areaDecimals": 2,
+      "forecastWindowMonths": 3,
+      "verificationWarnDays": 30,
+      "readingWindowDays": 25,
+      "monthsInYear": 12
+    }
+  },
+  "meters": [
+    {
+      "objectId": "obj-01",
+      "objectIndex": 1,
+      "objectLabel": "кв. 31",
+      "address": "г. Алушта, ул. 60 лет СССР, д. 18, кв. 31",
+      "serviceId": "electricity",
+      "serial": "01722953",
+      "model": "NP-0610MMБ1F1SM-V",
+      "lastCheckDate": "2021-09-29",
+      "checkPeriodYears": 6,
+      "nextCheckDate": "2027-09-29",
+      "daysLeft": 358,
+      "status": "ok"
+    },
+    {
+      "objectId": "obj-01",
+      "objectIndex": 1,
+      "objectLabel": "кв. 31",
+      "address": "г. Алушта, ул. 60 лет СССР, д. 18, кв. 31",
+      "serviceId": "water",
+      "serial": null,
+      "model": null,
+      "lastCheckDate": null,
+      "checkPeriodYears": null,
+      "nextCheckDate": null,
+      "daysLeft": null,
+      "status": "unknown"
+    },
+    {
+      "objectId": "obj-02",
+      "objectIndex": 2,
+      "objectLabel": "кв. 115",
+      "address": "г. Алушта, ул. 60 лет СССР, д. 18, кв. 115",
+      "serviceId": "electricity",
+      "serial": "01756835",
+      "model": "NP-0610MMБ1F1SM-V",
+      "lastCheckDate": "2021-04-28",
+      "checkPeriodYears": 6,
+      "nextCheckDate": "2027-04-28",
+      "daysLeft": 204,
+      "status": "ok"
+    },
+    {
+      "objectId": "obj-02",
+      "objectIndex": 2,
+      "objectLabel": "кв. 115",
+      "address": "г. Алушта, ул. 60 лет СССР, д. 18, кв. 115",
+      "serviceId": "water",
+      "serial": null,
+      "model": null,
+      "lastCheckDate": null,
+      "checkPeriodYears": null,
+      "nextCheckDate": null,
+      "daysLeft": null,
+      "status": "unknown"
+    },
+    {
+      "objectId": "obj-03",
+      "objectIndex": 3,
+      "objectLabel": "кв. 3",
+      "address": "г. Алушта, ул. Юбилейная, д. 38, кв. 3",
+      "serviceId": "electricity",
+      "serial": "011695136656042",
+      "model": "СЕ102М S7 145-AV",
+      "lastCheckDate": "2019-10-08",
+      "checkPeriodYears": 16,
+      "nextCheckDate": "2035-10-08",
+      "daysLeft": 3289,
+      "status": "ok"
+    },
+    {
+      "objectId": "obj-03",
+      "objectIndex": 3,
+      "objectLabel": "кв. 3",
+      "address": "г. Алушта, ул. Юбилейная, д. 38, кв. 3",
+      "serviceId": "water",
+      "serial": null,
+      "model": null,
+      "lastCheckDate": null,
+      "checkPeriodYears": null,
+      "nextCheckDate": null,
+      "daysLeft": null,
+      "status": "unknown"
+    },
+    {
+      "objectId": "obj-04",
+      "objectIndex": 4,
+      "objectLabel": "кв. 102",
+      "address": "г. Алушта, ул. Юбилейная, д. 38, кв. 102",
+      "serviceId": "electricity",
+      "serial": "45458105",
+      "model": "Меркурий 200.02",
+      "lastCheckDate": "2022-09-06",
+      "checkPeriodYears": 16,
+      "nextCheckDate": "2038-09-06",
+      "daysLeft": 4353,
+      "status": "ok"
+    },
+    {
+      "objectId": "obj-04",
+      "objectIndex": 4,
+      "objectLabel": "кв. 102",
+      "address": "г. Алушта, ул. Юбилейная, д. 38, кв. 102",
+      "serviceId": "water",
+      "serial": null,
+      "model": null,
+      "lastCheckDate": null,
+      "checkPeriodYears": null,
+      "nextCheckDate": null,
+      "daysLeft": null,
+      "status": "unknown"
+    },
+    {
+      "objectId": "obj-05",
+      "objectIndex": 5,
+      "objectLabel": "кв. 108",
+      "address": "г. Алушта, ул. Юбилейная, д. 38, кв. 108",
+      "serviceId": "electricity",
+      "serial": "41286426",
+      "model": "Меркурий 201 5-50",
+      "lastCheckDate": "2020-01-20",
+      "checkPeriodYears": 16,
+      "nextCheckDate": "2036-01-20",
+      "daysLeft": 3393,
+      "status": "ok"
+    },
+    {
+      "objectId": "obj-05",
+      "objectIndex": 5,
+      "objectLabel": "кв. 108",
+      "address": "г. Алушта, ул. Юбилейная, д. 38, кв. 108",
+      "serviceId": "water",
+      "serial": null,
+      "model": null,
+      "lastCheckDate": null,
+      "checkPeriodYears": null,
+      "nextCheckDate": null,
+      "daysLeft": null,
+      "status": "unknown"
+    },
+    {
+      "objectId": "obj-06",
+      "objectIndex": 6,
+      "objectLabel": "дом",
+      "address": "с. Перевальное, ул. Учительская, д. 1816/040701",
+      "serviceId": "electricity",
+      "serial": "06130550",
+      "model": "AD13 A 2 FLRsZR-Tx",
+      "lastCheckDate": "2022-01-01",
+      "checkPeriodYears": 16,
+      "nextCheckDate": "2038-01-01",
+      "daysLeft": 4105,
+      "status": "ok"
+    },
+    {
+      "objectId": "obj-06",
+      "objectIndex": 6,
+      "objectLabel": "дом",
+      "address": "с. Перевальное, ул. Учительская, д. 1816/040701",
+      "serviceId": "water",
+      "serial": null,
+      "model": null,
+      "lastCheckDate": null,
+      "checkPeriodYears": null,
+      "nextCheckDate": null,
+      "daysLeft": null,
+      "status": "unknown"
+    }
+  ],
+  "validation": {
+    "ok": true,
+    "problems": [],
+    "objects": 6,
+    "services": 5,
+    "meters": 12,
+    "archiveRecords": 60,
+    "checkedAt": "2026-10-06T07:01:07.997Z"
+  }
+}

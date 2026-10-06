@@ -57,11 +57,21 @@ const SERVER_FILES = [
   'package.json',
   'README.md',
   ...walk(path.join(ROOT, 'server')).map((f) => 'server/' + f),
+  ...walk(path.join(ROOT, 'php')).map((f) => 'php/' + f),
   ...walk(path.join(ROOT, 'tools')).map((f) => 'tools/' + f),
   ...walk(path.join(ROOT, 'deploy')).map((f) => 'deploy/' + f),
   '.dockerignore',
   '.gitignore'
 ];
+
+/* Готовую папку для VPS (dropin/) кладём в комплект, если она уже собрана:
+   так с сервера можно просто скопировать папку на хостинг с PHP. */
+const DROPIN_DIR = path.join(ROOT, 'dropin');
+if (fs.existsSync(DROPIN_DIR)) {
+  walk(DROPIN_DIR)
+    .filter((f) => f !== 'zhkx-data/state.js' && !f.startsWith('zhkx-data/history/'))
+    .forEach((f) => SERVER_FILES.push('dropin/' + f));
+}
 
 /* ------------------------------------------------------------------- ZIP --- */
 /* Минимальный ZIP-писатель (deflate + UTF-8 имена) — без внешних зависимостей. */
@@ -218,14 +228,20 @@ ${'='.repeat(60)}
 * systemd:     deploy/zhkx.service → /etc/systemd/system/
 * nginx:       deploy/nginx.conf.example (обратный прокси + basic-auth + HTTPS)
 * Демо без сервера: статическая сборка zhkx-demo-static.zip
+* Хостинг с PHP (без Node.js и без запуска процессов): папка dropin/ или архив
+  zhkx-vps-php.zip — распаковать на хостинг и открыть в браузере: данные пойдут
+  в zhkx-data/state.js. Соберётся командой npm run build:dropin.
 
 Обязательно поменяйте токен доступа (ZHKX_TOKEN) и закройте страницу от чужих:
 в приложении есть адреса, ФИО и лицевые счета. Тесты: npm run test:all.
 `;
 
 /* ------------------------------------------------------------------- сборка */
-fs.rmSync(DIST, { recursive: true, force: true });
+/* Чистим только свои архивы: dist/zhkx-vps-php.zip собирает build-dropin.mjs */
 fs.mkdirSync(DIST, { recursive: true });
+for (const name of ['zhkx-demo-static.zip', 'zhkx-demo-static.zip.sha256', 'zhkx-server.zip', 'zhkx-server.zip.sha256']) {
+  fs.rmSync(path.join(DIST, name), { force: true });
+}
 
 /* Статическое демо в репозитории: docs/ — складывается копированием на сервер,
    и его же можно указать как источник GitHub Pages (ветка → /docs). */
@@ -267,6 +283,7 @@ console.log('  ─────────────────────�
 console.log('  docs/                      ' + kb(staticZip.length).padStart(9) + '  ' + staticEntries.length + ' файлов — демо в репозитории (для своего сервера и GitHub Pages)');
 console.log('  dist/zhkx-demo-static.zip  ' + kb(staticZip.length).padStart(9) + '  ' + staticEntries.length + ' файлов — интерфейс без сервера');
 console.log('  dist/zhkx-server.zip       ' + kb(serverZip.length).padStart(9) + '  ' + serverEntries.length + ' файлов — приложение + сервер + deploy/');
+console.log('  dist/zhkx-vps-php.zip      ' + '  папка для VPS с PHP (npm run build:dropin)');
 console.log('  Контрольные суммы: dist/*.sha256');
 console.log('  ─────────────────────────────────────────────────────────');
 console.log('  Разложить демо на своём сервере:  rsync -a docs/ user@сервер:/var/www/zhkx-demo/');

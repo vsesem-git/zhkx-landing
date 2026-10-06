@@ -1,17 +1,25 @@
 {
   "name": "ЖКУ · Крым — учёт коммунальных услуг",
   "short_name": "ЖКУ Крым",
-  "description": "Личный учёт ЖКУ по 6 объектам в Крыму: начисления, авансовые кошельки, показания счётчиков, госповерка, прогнозы. Данные хранятся на своём сервере в data/state.js, офлайн-режим поддерживается.",
+  "description": "Личный учёт ЖКУ по 6 объектам в Крыму: начисления, авансовые кошельки, показания счётчиков, госповерка, прогнозы. Данные хранятся на своём сервере (zhkx-data/state.js на PHP-хостинге или data/state.js на Node.js), офлайн-режим поддерживается.",
   "lang": "ru-RU",
   "dir": "ltr",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone", "browser"],
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "browser"
+  ],
   "orientation": "any",
   "background_color": "#0b1220",
   "theme_color": "#0b1220",
-  "categories": ["utilities", "productivity", "finance"],
+  "categories": [
+    "utilities",
+    "productivity",
+    "finance"
+  ],
   "icons": [
     {
       "src": "assets/icons/icon.svg",
@@ -27,8 +35,17 @@
     }
   ],
   "shortcuts": [
-    { "name": "Калькулятор начислений", "url": "/?view=entry" },
-    { "name": "Водомеры", "url": "/?view=archive" },
-    { "name": "Журнал", "url": "/?view=journal" }
+    {
+      "name": "Калькулятор начислений",
+      "url": "./?view=entry"
+    },
+    {
+      "name": "Водомеры",
+      "url": "./?view=archive"
+    },
+    {
+      "name": "Журнал",
+      "url": "./?view=journal"
+    }
   ]
 }

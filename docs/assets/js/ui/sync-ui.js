@@ -18,6 +18,7 @@
 
   var lastHistory = null;
   var lastReminders = null;
+  var justLockedToken = null;
 
   /** «05.10.2026, 14:32» из ISO-строки */
   function formatDateTime(iso) {
@@ -61,7 +62,9 @@
 
   function serverTitle(i) {
     if (!i.health) return 'Сервер не обнаружен: приложение работает на данных этого браузера. Нажмите, чтобы подключить сервер.';
-    return 'Сервер: ' + i.url + ' · ревизия ' + i.revision + ' · ' + U.plural(i.pending, 'в очереди 1 операция', 'в очереди ' + i.pending + ' операции', 'в очереди ' + i.pending + ' операций');
+    var kind = i.apiKind === 'php' ? 'PHP на хостинге' : 'Node.js';
+    var access = i.open ? ' · без пароля (закройте доступ!)' : '';
+    return 'Сервер: ' + kind + ' · ' + i.url + ' · ревизия ' + i.revision + access;
   }
 
   /* ------------------------------------------------- карточка в «Данных» -- */
@@ -76,7 +79,9 @@
       '<div class="sync-card__body" data-sync-slot="body">' + bodyHtml(i, s, deep) + '</div>' +
       '<footer class="card__foot">' +
         '<button class="btn btn--primary" data-action="sync-modal">⚙️ Открыть синхронизацию</button>' +
-        (i.health && i.token ? '<button class="btn btn--ghost" data-action="sync-now">🔄 Синхронизировать сейчас</button>' : '') +
+        (i.health && i.token && !i.open ? '<button class="btn btn--ghost" data-action="sync-now">🔄 Синхронизировать сейчас</button>' : '') +
+        (i.health && i.apiKind === 'php' && i.open ? '<button class="btn btn--primary" data-action="sync-lock">🔒 Закрыть паролем</button>' : '') +
+        (i.health && Sync.serverCheckUrl() ? '<a class="btn btn--ghost" href="' + U.escapeHtml(Sync.serverCheckUrl()) + '" target="_blank" rel="noopener">🩺 Проверка сервера</a>' : '') +
         (i.health && i.token ? '<a class="btn btn--ghost" href="' + U.escapeHtml(Sync.downloadServerState()) + '" download="state.js">⬇️ Скачать data/state.js с сервера</a>' : '') +
       '</footer>' +
       '<div class="muted-sm">Данные хранятся на сервере в исполняемом js-файле <code>data/state.js</code>; браузер держит локальную копию для офлайн-работы, ' +
@@ -87,12 +92,14 @@
   function bodyHtml(i, s, deep) {
     var rows = [
       ['Режим', syncModeText(i)],
+      ['Движок сервера', i.health ? (i.apiKindLabel + (i.health.server && i.health.server.php ? ' ' + U.escapeHtml(i.health.server.php) : '')) : '—'],
       ['Адрес сервера', i.health ? '<code>' + U.escapeHtml(i.url) + '</code>' : '—'],
-      ['Токен доступа', i.token ? '🔑 задан' : '— не задан'],
+      ['Доступ', accessText(i)],
       ['Ревизия файла состояния', i.revision ? 'r' + i.revision : '—'],
       ['Обновлено на сервере', i.health && i.health.updatedAt ? formatDateTime(i.health.updatedAt) : '—'],
       ['Размер state.js', i.health && i.health.size ? U.formatNumber(i.health.size / 1024, 1) + ' КБ' : '—'],
       ['Контрольная сумма', i.health && i.health.checksum ? '<code class="small-code">' + U.escapeHtml(i.health.checksum.slice(0, 16)) + '…</code>' : '—'],
+      ['Файл состояния', i.health ? '<code>' + U.escapeHtml(i.health.app.stateFile) + '</code>' : '—'],
       ['Неотправленных операций', i.pending ? '<b class="text-warn">' + i.pending + '</b>' : '0 (всё на сервере)'],
       ['Последняя синхронизация', i.lastSyncAt ? formatDateTime(i.lastSyncAt) : 'ещё не было'],
       ['Локальная копия', s.journal.length + ' записей · ' + s.movements.length + ' движений · ' + U.formatNumber(deep.length / 1024, 1) + ' КБ'],
@@ -102,13 +109,20 @@
     return '<div class="stats">' + rows.map(function (row) {
       return '<div class="kv"><span>' + row[0] + '</span><b>' + row[1] + '</b></div>';
     }).join('') + '</div>' +
-    (i.status === 'unauthorized' ? '<div class="notice notice--warn">Сервер найден, но нужен токен доступа. Возьмите его командой <code>npm run token</code> в папке проекта и введите в окне синхронизации.</div>' : '') +
+    noticesHtml(i) +
+    (i.status === 'unauthorized' ? '<div class="notice notice--warn">Сервер найден, но нужен токен доступа. ' +
+      (i.apiKind === 'php'
+        ? 'Токен лежит в файле <code>zhkx-data/auth.json</code> (или задан в <code>zhkx-data/config.php</code>).'
+        : 'Возьмите его командой <code>npm run token</code> в папке проекта.') +
+      ' Если сервер ещё ни разу не закрывали паролем, проще нажать «Закрыть паролем».</div>' : '') +
     (i.status === 'offline' ? '<div class="notice notice--warn">Сервер недоступен — приложение продолжает работать, изменения копятся и уйдут автоматически, когда связь восстановится.</div>' : '') +
     (i.status === 'local' ? '<div class="notice">Сервер не запущен. Запустите <code>npm start</code> в папке проекта — приложение переключится на серверное хранение, пока же данные живут в localStorage.</div>' : '');
   }
 
   function syncModeText(i) {
-    if (i.status === 'synced') return '☁️ Серверное хранилище (data/state.js)';
+    if (!i.apiKind) return '💻 Локально в браузере (localStorage)';
+    var where = i.apiKind === 'php' ? 'PHP на хостинге, файл zhkx-data/state.js' : 'Node.js, файл data/state.js';
+    if (i.status === 'synced') return '☁️ Серверное хранилище (' + where + ')';
     if (i.status === 'pending' || i.status === 'syncing') return '☁️ Сервер + локальная копия (есть очередь)';
     if (i.status === 'offline') return '📴 Офлайн-режим, очередь сохраняется';
     if (i.status === 'unauthorized') return '🔒 Локальная копия, сервер ждёт токен';
@@ -118,6 +132,34 @@
   function telegramText(notifications) {
     if (!notifications || !notifications.telegram) return 'выключены (нет TELEGRAM_TOKEN / TELEGRAM_CHAT)';
     return '✅ включены · ежедневная проверка';
+  }
+
+  /** Состояние доступа к API */
+  function accessText(i) {
+    if (!i.health) return '— сервера нет';
+    if (i.token && !i.open) return '🔑 по токену';
+    if (i.token && i.open) return '🔑 токен в этом браузере, но сервер ещё открыт';
+    if (i.open) return '<b class="text-warn">открыт — любой, кто знает адрес, видит данные</b>';
+    return 'нужен токен';
+  }
+
+  /** Предупреждения: открытый доступ, незакрытый каталог данных */
+  function noticesHtml(i) {
+    var html = '';
+    if (i.health && i.apiKind === 'php' && i.open) {
+      html += '<div class="notice notice--warn"><b>Сервер пока без пароля.</b> Кто знает адрес — увидит и сможет изменить данные ' +
+        '(журнал, авансы, лицевые счета). Нажмите «Закрыть паролем» — токен создастся автоматически и сохранится в этом браузере.</div>';
+    }
+    if (i.health && i.apiKind === 'php' && i.exposed === true) {
+      html += '<div class="notice notice--bad"><b>Каталог zhkx-data открыт веб-серверу.</b> Файл состояния можно скачать по прямой ссылке ' +
+        '<code>zhkx-data/state.js</code>. Закройте каталог: для Apache достаточно файла <code>zhkx-data/.htaccess</code> (уже в папке), ' +
+        'для nginx добавьте <code>location ~ /zhkx-data/ { deny all; }</code>. Подробнее — в «ПРОЧТИ-МЕНЯ.txt».</div>';
+    }
+    if (i.health && i.apiKind === 'php' && i.exposed === null) {
+      html += '<div class="notice">Проверка защиты каталога данных недоступна (хостинг запрещает исходящие запросы). ' +
+        'Убедитесь, что файл <code>zhkx-data/state.js</code> не открывается по прямой ссылке.</div>';
+    }
+    return html;
   }
 
   function statusIcon(code) {
@@ -135,18 +177,27 @@
     var historyBlock = '<div class="muted-sm" id="sync-history">История ревизий загружается…</div>';
     var remindersBlock = '<div class="muted-sm" id="sync-reminders">Напоминания загружаются…</div>';
 
-    if (i.health && i.token) {
+    if (i.health) {
       rows =
         '<div class="stats stats--tight">' +
+          '<div class="kv"><span>Движок</span><b>' + U.escapeHtml(i.apiKindLabel) + '</b></div>' +
           '<div class="kv"><span>Ревизия</span><b>r' + i.revision + '</b></div>' +
           '<div class="kv"><span>Очередь</span><b>' + i.pending + '</b></div>' +
-          '<div class="kv"><span>Размер state.js</span><b>' + (i.health.size ? U.formatNumber(i.health.size / 1024, 1) + ' КБ' : '—') + '</b></div>' +
+          '<div class="kv"><span>Размер файла</span><b>' + (i.health.size ? U.formatNumber(i.health.size / 1024, 1) + ' КБ' : '—') + '</b></div>' +
           '<div class="kv"><span>Клиент</span><b><code class="small-code">' + U.escapeHtml(i.clientId) + '</code></b></div>' +
         '</div>';
     }
 
     var body = '' +
       '<div class="sync-modal">' +
+        (justLockedToken
+          ? '<section class="sync-block sync-block--token"><h4>🔑 Токен доступа создан</h4>' +
+            '<div class="notice notice--ok">Сохраните токен: он понадобится, чтобы открыть данные на другом устройстве ' +
+            '(в этом браузере он уже запомнен).<div class="token-line"><input type="text" readonly value="' +
+            U.escapeHtml(justLockedToken) + '" id="sync-token-value" onclick="this.select()">' +
+            '<button class="btn btn--ghost btn--sm" data-action="sync-copy-token">Скопировать</button></div>' +
+            'Файл токена на сервере: <code>zhkx-data/auth.json</code></div></section>'
+          : '') +
         '<section class="sync-block">' +
           '<h4>1. Подключение к серверу</h4>' +
           '<div class="form-stack">' +
@@ -161,7 +212,9 @@
                   '<input type="password" name="token" autocomplete="off" placeholder="например, demo-token"></div>' +
                   '<button class="btn btn--primary" type="submit">🔓 Войти</button>' +
                 '</form>' +
-                '<span class="muted-sm">Токен выдаётся командой <code>npm run token</code> (или <code>npm run dev</code> — демо-режим с токеном <code>demo-token</code>). Сохраняется только в этом браузере.</span>' +
+                '<span class="muted-sm">' + (i.apiKind === 'php'
+                  ? 'Токен вы задаёте сами при закрытии доступа (или в файле <code>zhkx-data/config.php</code>). Сохраняется только в этом браузере.'
+                  : 'Токен выдаётся командой <code>npm run token</code> (или <code>npm run dev</code> — демо-режим с токеном <code>demo-token</code>). Сохраняется только в этом браузере.') + '</span>' +
                 (i.demoAuth ? '<button class="btn btn--ghost btn--sm" data-action="sync-demo-login">🔓 Войти в демо-режиме (demo-token)</button>' : '')) +
             '<div class="row gap"><button class="btn btn--ghost btn--sm" data-action="sync-apply-url">Применить адрес</button>' +
               '<button class="btn btn--ghost btn--sm" data-action="sync-connect">🔌 Проверить связь</button></div>' +
@@ -169,7 +222,12 @@
         '</section>' +
 
         '<section class="sync-block">' +
-          '<h4>2. Обмен данными</h4>' + rows +
+          '<h4>2. Обмен данными</h4>' + rows + noticesHtml(i) +
+          (i.health && i.apiKind === 'php' && i.open
+            ? '<div class="row gap wrap"><button class="btn btn--primary" data-action="sync-lock">🔒 Закрыть паролем (создать токен)</button>' +
+              (Sync.serverCheckUrl() ? '<a class="btn btn--ghost" href="' + U.escapeHtml(Sync.serverCheckUrl()) + '" target="_blank" rel="noopener">🩺 Проверка сервера</a>' : '') +
+              '</div>'
+            : '') +
           '<div class="row gap wrap">' +
             '<button class="btn btn--primary" data-action="sync-now" ' + (i.token ? '' : 'disabled') + '>🔄 Синхронизировать (отправить очередь и забрать свежее)</button>' +
             '<button class="btn btn--ghost" data-action="sync-push-full" ' + (i.token ? '' : 'disabled') + '>⬆️ Отправить локальное состояние целиком</button>' +
@@ -178,10 +236,10 @@
           '<label class="check"><input type="checkbox" id="sync-autosync" ' + (i.autoSync ? 'checked' : '') + '> Автосинхронизация: после каждого изменения, раз в минуту и при появлении сети</label>' +
         '</section>' +
 
-        (i.token ? '<section class="sync-block"><h4>3. История ревизий data/state.js</h4>' + historyBlock +
+        ((i.token || i.open) ? '<section class="sync-block"><h4>3. История ревизий файла состояния</h4>' + historyBlock +
           '<div class="muted-sm">Сервер хранит до 60 последних версий файла. Откат создаёт новую ревизию — историю не теряем.</div></section>' : '') +
 
-        (i.token ? '<section class="sync-block"><h4>4. Напоминания (Telegram)</h4>' + remindersBlock +
+        ((i.token || i.open) ? '<section class="sync-block"><h4>4. Напоминания (Telegram)</h4>' + remindersBlock +
           '<div class="row gap wrap"><button class="btn btn--ghost btn--sm" data-action="sync-reminders-preview">↻ Обновить список</button>' +
           '<button class="btn btn--ghost btn--sm" data-action="sync-reminders-send">✈️ Отправить сейчас</button></div></section>' : '') +
       '</div>';
@@ -192,11 +250,15 @@
   function open() {
     Forms.Modal.open(modal());
     wireModal();
-    if (Sync.info().token) {
+    var i = Sync.info();
+    if (i.token || i.open) {
       loadHistory();
       loadReminders();
     }
   }
+
+  /** Запомнить токен, только что созданный кнопкой «Закрыть паролем» */
+  function rememberToken(token) { justLockedToken = token || null; }
 
   function wireModal() {
     var autosync = document.getElementById('sync-autosync');
@@ -282,7 +344,9 @@
     loadReminders: loadReminders,
     statusTone: statusTone,
     shortLabel: shortLabel,
-    formatDateTime: formatDateTime
+    formatDateTime: formatDateTime,
+    rememberToken: rememberToken,
+    accessText: accessText
   };
 
   var ns = global.ZHKX = global.ZHKX || {};

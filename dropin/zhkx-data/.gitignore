@@ -1,0 +1,6 @@
+# state.js, ревизии и токен создаются api.php на сервере — в git им не место
+*
+!.gitignore
+!index.html
+!.htaccess
+!config.php.example

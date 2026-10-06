@@ -1199,8 +1199,13 @@
     s.settings.activeObjectId = o.activateObjectId || Data.OBJECTS[0].id;
 
     opSuppressed--;
-    /* На сервер уходит одним действием «полная замена» */
-    recordOp('replace-state', { state: snapshotForServer(), reason: 'seed-demo' });
+    /* На сервер уходит одним действием «полная замена».
+       Исключение — демонстрационное наполнение при первом запуске
+       (bootstrap): выдуманные начисления не должны попадать в хранилище
+       на сервере, поэтому в очередь операций они не записываются. */
+    if (!o.bootstrap) {
+      recordOp('replace-state', { state: snapshotForServer(), reason: 'seed-demo' });
+    }
     save();
     return {
       ok: true,

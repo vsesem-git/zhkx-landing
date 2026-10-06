@@ -521,3 +521,13 @@ input[type="checkbox"] { width: auto; }
 @media print {
   .sync-badge-host, .offline-bar { display: none !important; }
 }
+
+/* Токен, созданный кнопкой «Закрыть паролем» */
+.sync-block--token { border-color: color-mix(in srgb, var(--ok) 45%, var(--border)); }
+.token-line { display: flex; gap: .5rem; margin: .5rem 0; flex-wrap: wrap; }
+.token-line input {
+  flex: 1 1 260px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .85rem;
+  padding: .45rem .6rem; border-radius: 9px; border: 1px solid var(--border);
+  background: var(--bg-input); color: var(--text);
+}
+.notice--bad { border-left-color: var(--bad); background: var(--bad-soft); }

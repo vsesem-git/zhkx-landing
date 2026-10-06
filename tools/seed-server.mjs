@@ -5,6 +5,9 @@
  *           node tools/seed-server.mjs --demo     — демо-история за 12 месяцев
  *           node tools/seed-server.mjs --file backup.json
  *           node tools/seed-server.mjs --url http://localhost:8000 --token …
+ *           node tools/seed-server.mjs --url http://сайт --demo   (PHP-версия из dropin/)
+ *
+ *  Движок (Node.js или PHP) определяется автоматически по ответу health.
  *
  *  Что делает:
  *    1. берёт готовый JSON-бэкап (файл или localStorage браузера выгрузить
@@ -82,9 +85,43 @@ function buildStateFromApp({ months = 12, fresh = true } = {}) {
   return { state: State.snapshotForServer(), seeded };
 }
 
+/* ---------------------------------------------- какой движок на том конце? -- */
+/**
+ * Хранилище бывает двух видов (см. README):
+ *   • Node.js — маршруты вида  /api/import
+ *   • PHP     — маршруты вида  api.php?route=import  (папка dropin/ на хостинге)
+ * Определяем по ответу health, чтобы не спрашивать пользователя.
+ */
+async function detectEngine() {
+  const candidates = [
+    { kind: 'php', url: BASE + '/api.php?route=health', route: (r) => BASE + '/api.php?route=' + r },
+    { kind: 'php', url: BASE + '/api/health', route: (r) => BASE + '/api.php?route=' + r },
+    { kind: 'node', url: BASE + '/api/health', route: (r) => BASE + '/api/' + r }
+  ];
+  for (const c of candidates) {
+    try {
+      const res = await fetch(c.url, { headers: { Accept: 'application/json' } });
+      if (!res.ok) continue;
+      const json = await res.json();
+      if (json && json.ok === true && json.app && json.app.id === 'zhkx-crimea') {
+        return { kind: c.kind, route: c.route, health: json, open: !!(json.auth && json.auth.open) };
+      }
+    } catch (e) { /* пробуем следующий вариант */ }
+  }
+  return null;
+}
+
+const engine = await detectEngine();
+if (!engine) {
+  console.error('\n❌ Не нашёл сервер по адресу ' + BASE);
+  console.error('   Node.js:  npm start   (или npm run dev)');
+  console.error('   PHP:      положите папку dropin/ на хостинг и укажите --url http://сайт\n');
+  process.exit(1);
+}
+
 /* ------------------------------------------------------------------- main -- */
 const authToken = token();
-if (!authToken) {
+if (!authToken && !engine.open) {
   console.error('\n❌ Не найден токен доступа.');
   console.error('   Запустите сервер (npm start) и возьмите токен:  npm run token');
   console.error('   либо укажите его явно:                        node tools/seed-server.mjs --token <токен>\n');
@@ -107,16 +144,19 @@ if (fileArg) {
 
 console.log('\n  🏠  Наполнение сервера ЖКУ · Крым');
 console.log('  ─────────────────────────────────────────────────────');
-console.log('  Сервер        : ' + BASE);
+console.log('  Сервер        : ' + BASE + '  (' + (engine.kind === 'php' ? 'PHP, zhkx-data/state.js' : 'Node.js, data/state.js') +
+  (authToken ? ', по токену' : ', открытый режим') + ')');
 console.log('  Источник      : ' + sourceLabel);
 
 delete state.outbox;
 console.log('  Записей       : ' + state.journal.length + ' · движений ' + state.movements.length +
   ' · объектов с правками ' + Object.keys(state.objects).length);
 
-const res = await fetch(BASE + '/api/import', {
+const headers = { 'Content-Type': 'application/json' };
+if (authToken) headers.Authorization = 'Bearer ' + authToken;
+const res = await fetch(engine.route('import'), {
   method: 'POST',
-  headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + authToken },
+  headers,
   body: JSON.stringify({ state, clientId: 'seed-script' })
 });
 
@@ -127,7 +167,7 @@ if (!res.ok || !json || json.ok === false) {
   process.exit(1);
 }
 
-const after = await (await fetch(BASE + '/api/state', { headers: { Authorization: 'Bearer ' + authToken } })).json();
+const after = await (await fetch(engine.route('state'), { headers })).json();
 console.log('  ─────────────────────────────────────────────────────');
 console.log('  ✅ Загружено. Ревизия: r' + after.revision);
 console.log('  Начислений    : ' + after.state.journal.length);

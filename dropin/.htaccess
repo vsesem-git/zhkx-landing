@@ -1,0 +1,28 @@
+# ЖКУ · Крым — папка для хостинга с PHP (Apache)
+# Кладётся в корень сайта или в подпапку. Ничего кроме этого файла настраивать
+# не нужно: index.html отдаётся сразу, api.php хранит данные в zhkx-data/.
+
+DirectoryIndex index.html index.php
+
+# Кодировка и типы файлов
+AddDefaultCharset UTF-8
+AddType application/manifest+json .webmanifest
+AddType application/javascript .js
+
+# Служебные каталоги не показываем в листингах
+Options -Indexes
+
+# Данные приложения НИКОГДА не должны отдаваться браузеру напрямую:
+# их читает и пишет только api.php.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^zhkx-data/ - [F,L]
+</IfModule>
+
+# Кэш статики (интерфейс можно кэшировать, данные — нет)
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/css "access plus 7 days"
+  ExpiresByType application/javascript "access plus 7 days"
+  ExpiresByType image/svg+xml "access plus 30 days"
+</IfModule>
